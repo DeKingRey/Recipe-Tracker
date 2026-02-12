@@ -6,7 +6,6 @@ from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, ForeignKey, select
-import sqlite3
 
 DATABASE = "recipes.db"
 
@@ -14,27 +13,24 @@ DATABASE = "recipes.db"
 app = Flask(__name__)
 
 # Initialize the DB
-app.config["SQLALCHEMY_DATABASE_URI"] = "recipes.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///recipes.db"
+app.config["SECRET_KEY"] = "secret_shhhh"
 db = SQLAlchemy(app)
 
 
-class Base(DeclarativeBase):
-    pass
+class Recipe(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
 
-
-class Recipe(Base):
-    __tablename__ = "recipes"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(80))
 
 
 @app.route("/")
 def home():
     # Home Page
 
-    items = db.session.execute(select(Recipe)).scalars()
+    recipes = Recipe.query.all()
 
-    return render_template("index.html", items)
+    return render_template("index.html", recipes=recipes, header="Home")
 
 
 @app.route("/recipe/<int:id>")
