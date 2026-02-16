@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <h1>{{ recipe.name }}</h1>
+
+    {% for ingredient in recipe.ingredients %}
+        <p>{{ ingredient.name }}</p>
+    {% endfor %}
+
+{% endblock %}

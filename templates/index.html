@@ -1,8 +1,11 @@
 {% extends 'layout.html' %}
 {% block content %}
 
+    <a href="{{ url_for('login') }}">Login</a><br>
+    <a href="{{ url_for('register') }}">Register</a>
+
     {% for recipe in recipes %}
-        <p>{{ recipe.name }}</p>
+        <p><a href="/recipe/{{ recipe.id }}">{{ recipe.name }}</a></p>
     {% endfor %}
 
 {% endblock %}
