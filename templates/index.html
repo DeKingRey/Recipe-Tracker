@@ -1,8 +1,14 @@
 {% extends 'layout.html' %}
 {% block content %}
 
-    <a href="{{ url_for('login') }}">Login</a><br>
-    <a href="{{ url_for('register') }}">Register</a>
+    {% if current_user.is_authenticated %}
+        <h2>Welcome back, {{ current_user.username }}!</h2>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+        <h2>Welcome to the Stardew Valley Recipe Tracker!</h2>
+        <a href="{{ url_for('login') }}">Login</a><br>
+        <a href="{{ url_for('register') }}">Register</a>
+    {% endif %}
 
     {% for recipe in recipes %}
         <p><a href="/recipe/{{ recipe.id }}">{{ recipe.name }}</a></p>

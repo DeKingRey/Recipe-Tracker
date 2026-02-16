@@ -1,5 +1,32 @@
 {% extends 'layout.html' %}
 {% block content %}
+
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+
+        <!-- Username Div -->
+        <div>
+            {{ form.username.label }}
+            {{ form.username }}
+            
+            {% for error in form.username.errors %}
+                <p style="color: red;">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <!-- Password Div -->
+        <div>
+            {{ form.password.label }}
+            {{ form.password }}
+            {{ form.confirm_password}}
+            
+            {% for error in form.password.errors %}
+                <p style="color: red;">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        {{ form.submit }}
+    </form>
     
     <a href="{{ url_for('register') }}">Already have an account? Log in</a>
 

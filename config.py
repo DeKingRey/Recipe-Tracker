@@ -1,0 +1,2 @@
+# Constants
+ZERO = 0
