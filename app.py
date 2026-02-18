@@ -3,15 +3,17 @@ A recipe tracker for Stardew Valley.
 Users can easily add the recipes they have completed to a list to keep track.
 By Miguel Monreal on 12/02/26"""
 
-from flask import Flask, render_template, url_for, redirect, request
+from flask import Flask, render_template, url_for, redirect, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import (UserMixin, login_user, LoginManager,
+from flask_login import (login_user, LoginManager,
                          login_required, logout_user, current_user)
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError, EqualTo
 from flask_bcrypt import Bcrypt
-from config import ZERO
+from config import ZERO, STATUS_CHOICES
+from models import (Account, Recipe, RecipeAccount,
+                    Ingredient)
 import os
 
 
@@ -35,47 +37,6 @@ login_manager.login_view = "login"
 @login_manager.user_loader
 def load_user(user_id):
     return Account.query.get(int(user_id))
-
-
-recipe_ingredient = db.Table(
-    "recipe_ingredient",
-    db.Column("recipe_id", db.Integer, db.ForeignKey("recipe.id")),
-    db.Column("ingredient_id", db.Integer, db.ForeignKey("ingredient.id"))
-)
-
-recipe_account = db.Table(
-    "recipe_account",
-    db.Column("recipe_id", db.Integer, db.ForeignKey("recipe.id")),
-    db.Column("account_id", db.Integer, db.ForeignKey("account.id")),
-    db.Column("status", db.Integer)
-)
-
-
-class Recipe(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), nullable=False)
-    ingredients = db.relationship("Ingredient", secondary=recipe_ingredient,
-                                  backref="recipes", lazy=True)
-    
-    accounts = db.relationship("Account", secondary=recipe_account,
-                               backref="recipes", lazy=True)
-
-    def __repr__(self):
-        return f"Recipe {self.name}"
-
-
-class Ingredient(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), nullable=False)
-
-    def __repr__(self):
-        return f"Ingredient {self.name}"
-
-
-class Account(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False, unique=True)
-    password = db.Column(db.String(80), nullable=False)
 
 
 class RegisterForm(FlaskForm):
@@ -128,18 +89,51 @@ def home():
 
 
 # Individual recipe page displaying necessary ingredients
-@app.route("/recipe/<int:id>", methods=["GET", "POST"])
+@app.route("/recipe/<int:id>")
 def recipe(id):
     recipe = Recipe.query.get_or_404(id)
 
-    if request.method == "POST":
-        add_recipe(id)
+    status = ZERO
+    if current_user.is_authenticated:
+        link = RecipeAccount.query.filter_by(
+            recipe_id=id,
+            account_id=current_user.id
+        ).first()
 
-    return render_template("recipe.html", recipe=recipe)
+        status = link.status if link else ZERO
 
+    return render_template("recipe.html", recipe=recipe,
+                           status_choices=STATUS_CHOICES,
+                           status=status)
 
-def add_recipe(id):
-    Recipe.query.filter_by(id=id, status=ZERO)
+@app.route("/update-recipe-status", methods=["GET", "POST"])
+@login_required
+def update_recipe_status():
+    data = request.get_json()
+
+    # Gets the recipe linked with account (to use the status)
+    link = RecipeAccount.query.filter_by(
+        recipe_id=data["id"],
+        account_id=current_user.id
+    ).first()
+
+    # Ensures status is valid
+    if data["status"] in [0, 1, 2]:
+        # Adds or updates row depending on if it exists
+        if not link:
+            link = RecipeAccount(
+                recipe_id=data["id"],
+                account_id=current_user.id,
+                status=data["status"]
+            )
+            db.session.add(link)
+        else:
+            link.status = data["status"]
+
+        db.session.commit()
+        return jsonify({"success": True})
+
+    return jsonify({"success": False}), 404
 
 
 @app.route("/login", methods=["GET", "POST"])

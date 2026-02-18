@@ -10,6 +10,31 @@
 <body>
     <header>{{ header }}</header>
 
+    <!-- Sets up the navbar for every page-->
+    <nav class="navbar">
+        <ul>
+            <li><a href="/">Home</a></li>
+            {% if not current_user.is_authenticated %}
+                <li><a href="/register">Register</a></li>
+                <li><a href="/login">Login</a></li>
+            {% else %}
+                <li><a href="/dashboard">Dashboard</a></li>
+            {% endif %}
+
+            <li>
+                <div class="form-group">
+                    <div class="location-wrapper">
+                        <label for="location">Location</label>
+                        <input type="text" placeholder="Search..." name="location" id="location_input" autocomplete="off"  required>
+                        <ul class="suggestions" id="locations"></ul> 
+                    </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
+
+                    <div class="form-error location-errors" style="display: none;"></div> <!-- Div which will display location errors -->
+                </div>
+            </li>
+        </ul>
+    </nav>
+
     <main>{% block content %}{% endblock %}</main>
 
     <footer>&copy;Miguel Monreal 2025</footer> <!-- Sets my footer. -->
