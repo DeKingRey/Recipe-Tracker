@@ -1,4 +1,4 @@
-from app import db
+from config import db
 from flask_login import UserMixin
 
 
@@ -19,6 +19,12 @@ class Recipe(db.Model):
 
     def __repr__(self):
         return f"Recipe {self.name}"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
 
 
 class Ingredient(db.Model):

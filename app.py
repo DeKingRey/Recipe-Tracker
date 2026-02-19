@@ -4,14 +4,13 @@ Users can easily add the recipes they have completed to a list to keep track.
 By Miguel Monreal on 12/02/26"""
 
 from flask import Flask, render_template, url_for, redirect, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import (login_user, LoginManager,
                          login_required, logout_user, current_user)
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError, EqualTo
 from flask_bcrypt import Bcrypt
-from config import ZERO, STATUS_CHOICES
+from config import ZERO, STATUS_CHOICES, db, OWNED, COOKED
 from models import (Account, Recipe, RecipeAccount,
                     Ingredient)
 import os
@@ -24,9 +23,9 @@ app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "recipes.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db.init_app(app)
 
 app.config["SECRET_KEY"] = "secret_shhhh"
-db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 login_manager = LoginManager()
@@ -75,6 +74,13 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
+@app.context_processor
+def inject_info():
+    return {
+        "recipes": get_recipes()
+    }
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404
@@ -83,9 +89,28 @@ def page_not_found(e):
 # Home Page
 @app.route("/")
 def home():
-    recipes = Recipe.query.all()
+    recipes = get_recipes()
 
     return render_template("index.html", recipes=recipes, header="Home")
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    # Gets the information for the users recipe tracking (numbers)
+    account_recipes = {
+        "total": Recipe.query.count(),
+        "unowned": RecipeAccount.query.filter_by(
+            status=ZERO).count(),
+        "owned": RecipeAccount.query.filter_by(
+            status=OWNED).count(),
+        "cooked": RecipeAccount.query.filter_by(
+            status=COOKED).count(),
+        "recipes": get_recipes()
+    }
+
+    return render_template("dashboard.html", account_recipes=account_recipes,
+                           header="Dashboard")
 
 
 # Individual recipe page displaying necessary ingredients
@@ -105,6 +130,7 @@ def recipe(id):
     return render_template("recipe.html", recipe=recipe,
                            status_choices=STATUS_CHOICES,
                            status=status)
+
 
 @app.route("/update-recipe-status", methods=["GET", "POST"])
 @login_required
@@ -176,6 +202,12 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for("login"))
+
+
+def get_recipes():
+    recipes = Recipe.query.all()
+    recipes_data = [recipe.to_dict() for recipe in recipes]
+    return recipes_data
 
 
 if __name__ == "__main__":

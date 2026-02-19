@@ -21,15 +21,15 @@
                 <li><a href="/dashboard">Dashboard</a></li>
             {% endif %}
 
+            <!-- Search bar to find recipes -->
             <li>
+                <form action=""></form>
                 <div class="form-group">
-                    <div class="location-wrapper">
-                        <label for="location">Location</label>
-                        <input type="text" placeholder="Search..." name="location" id="location_input" autocomplete="off"  required>
-                        <ul class="suggestions" id="locations"></ul> 
-                    </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
-
-                    <div class="form-error location-errors" style="display: none;"></div> <!-- Div which will display location errors -->
+                    <div class="search-wrapper">
+                        <label for="search">Search</label>
+                        <input type="text" placeholder="Search..." name="search" id="search_input" autocomplete="off"  required>
+                        <ul class="suggestions" id="suggestions"></ul> 
+                    </div>
                 </div>
             </li>
         </ul>
@@ -38,5 +38,56 @@
     <main>{% block content %}{% endblock %}</main>
 
     <footer>&copy;Miguel Monreal 2025</footer> <!-- Sets my footer. -->
+
+    <script>
+        const recipes_data = {{ recipes|tojson }} // Gets recipes
+        const input = document.getElementById("search_input")
+        const suggestions = document.getElementById("suggestions")
+
+        input.addEventListener("input", () => {
+            const query = input.value.trim().toLowerCase(); // Gets the users input and correctly formats
+            suggestions.innerHTML = ""; 
+
+            if (!query) return;
+
+            // Checks for recipes which include the inputted search
+            const matches = recipes_data.filter(recipe =>
+                recipe.name.toLowerCase().includes(query)
+            );
+
+        // Creates suggestions for each match for user to click
+        matches.forEach(match => {
+            const li = document.createElement("li");
+            li.textContent = match.name;
+            li.addEventListener("click", () => {
+                input.value = match.name;
+                suggestions.innerHTML = "";
+
+                // Redirects to recipe page
+                window.location.href = `/recipe/${match.id}`;
+            });
+            suggestions.appendChild(li);
+        });
+
+        input.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+
+                const searchInput = input.value.trim().toLowerCase();
+                
+                // Finds matching recipe
+                const match = recipes_data.find(recipe => 
+                    recipe.name.toLowerCase() === searchInput
+                );
+
+                // Redirect to recipe page if match, otherwise do nothing
+                if (match) {
+                    window.location.href = `/recipe/${match.id}`;
+                }
+            }
+        })
+
+        });
+    </script>
 </body>
 </html>

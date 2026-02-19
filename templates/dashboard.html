@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+    <h2>Hello {{ current_user.username }}!</h2>
+
+    <div class="unowned">
+        <h2>Unowned Recipes</h2>
+        <h3>{{ account_recipes.unowned }}/{{ account_recipes.total }}</h3>
+    </div>
+
+    <div class="owned">
+        <h2>Owned Recipes</h2>
+        <h3>{{ account_recipes.owned }}/{{ account_recipes.total }}</h3>
+    </div>
+
+    <div class="cooked">
+        <h2>Cooked Recipes</h2>
+        <h3>{{ account_recipes.cooked }}/{{ account_recipes.total }}</h3>
+    </div>
+
+{% endblock %}
